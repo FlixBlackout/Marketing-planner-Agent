@@ -1,1 +1,1 @@
-web: cd marketing_agent && uvicorn api:app --host 0.0.0.0 --port $PORT
+web: PYTHONPATH=marketing_agent uvicorn marketing_agent.api:app --host 0.0.0.0 --port $PORT

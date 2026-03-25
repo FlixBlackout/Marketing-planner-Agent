@@ -7,6 +7,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.10.12"
+      - key: PYTHONPATH
+        value: "/opt/render/project/src/marketing_agent"
       - key: OPENROUTER_API_KEY
         sync: false # User will provide this in the dashboard
       - key: OPENROUTER_BASE_URL

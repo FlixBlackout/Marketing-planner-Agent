@@ -6,7 +6,14 @@ as a RESTful API.
 """
 
 import os
+import sys
 from typing import Dict, List, Any, Optional
+
+# Add the current directory to sys.path to resolve local imports on platforms like Render
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
