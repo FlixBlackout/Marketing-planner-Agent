@@ -1,0 +1,19 @@
+# Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project specific
+marketing-frontend/
+node_modules/
+.DS_Store
+*.log

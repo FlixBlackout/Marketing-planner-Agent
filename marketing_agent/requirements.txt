@@ -1,0 +1,33 @@
+# Marketing Planning Assistant Agent - Dependencies
+
+# Core AI Framework (Choose one)
+# Option 1: CrewAI (Recommended for multi-agent systems)
+crewai>=0.50.0
+langchain-openai>=0.1.0
+
+# Option 2: LangChain Core (Alternative)
+langchain>=0.1.0
+langchain-community>=0.0.10
+
+# LLM API Support
+openai>=1.12.0
+google-generativeai>=0.3.0  # For Gemini API support
+
+# Utility Libraries
+python-dotenv>=1.0.0  # For environment variable management
+pydantic>=2.0.0  # Data validation (included with crewai)
+
+# Enhanced output formatting
+rich>=13.0.0  # Beautiful terminal output with colors and tables
+
+# Web API
+fastapi>=0.110.0
+uvicorn>=0.27.0
+
+# Optional: Testing
+pytest>=8.0.0
+pytest-cov>=4.0.0
+
+# Optional: Code quality
+black>=24.0.0
+flake8>=7.0.0
