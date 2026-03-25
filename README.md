@@ -50,6 +50,20 @@ cd ..
 ```
 Visit **[http://localhost:8001](http://localhost:8001)** in your browser to start planning.
 
+## 🌐 Deployment (Render / Heroku)
+
+This project is configured for easy deployment on platforms like Render or Heroku.
+
+### Steps to Deploy on Render:
+1. **Connect GitHub**: Fork this repository and connect it to a new "Web Service" on Render.
+2. **Build Settings**:
+   - **Environment**: `Python`
+   - **Build Command**: `pip install -r marketing_agent/requirements.txt`
+   - **Start Command**: `uvicorn marketing_agent.api:app --host 0.0.0.0 --port $PORT`
+3. **Environment Variables**:
+   - Add `OPENROUTER_API_KEY` (or `GEMINI_API_KEY`) to the environment variables section in the Render dashboard.
+   - Set `MAX_TOKENS=2500` and `TEMPERATURE=0.7` as needed.
+
 ## 🛠️ Technology Stack
 
 - **Core**: Python 3.10+
