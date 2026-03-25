@@ -77,6 +77,20 @@ class GeminiMarketingPlanner:
             print(f"⚠️  Error initializing Gemini: {e}")
             print("   Falling back to mock mode")
     
+    def _clean_and_parse_json(self, content: str) -> Any:        
+        """Helper to extract and parse JSON from AI response robustly."""
+        content = content.strip()
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+            
+        try:
+            return json.loads(content, strict=False)
+        except json.JSONDecodeError as e:
+            print(f"⚠️ Gemini JSON parse failed: {e}")
+            raise e
+
     def interpret_goal_with_ai(self, marketing_goal: str, duration_days: int = 14, custom_instructions: str = "") -> Dict[str, Any]:
         """
         Use Gemini to intelligently interpret the marketing goal.
@@ -127,20 +141,7 @@ Format as valid JSON with these exact keys:
 """
             
             response = self.model.generate_content(prompt)
-            response_text = response.text.strip()
-            
-            # Extract JSON from response (handle markdown code blocks)
-            if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
-            
-            # Parse JSON
-            try:
-                interpretation = json.loads(response_text)
-            except json.JSONDecodeError:
-                # If JSON parsing fails, use simple interpretation
-                interpretation = self._simple_interpretation(marketing_goal)
+            interpretation = self._clean_and_parse_json(response.text)
             
             # Add original goal
             interpretation['original_goal'] = marketing_goal
@@ -178,13 +179,18 @@ Target Duration: {target_days} days
 Focus Areas: {interpreted_goal.get('focus_areas', [])}
 Custom Constraints: {constraints}
 
-Generate 5-10 specific tasks. For each task provide:
+CRITICAL REQUIREMENT: The total duration of this project MUST be exactly {target_days} days.
+The tasks you generate must span the entire {target_days} day period from Day 1 to Day {target_days}.
+
+Generate 7-12 specific tasks. For each task provide:
 1. Task name (short, action-oriented)
 2. Description (what and why)
 3. Required tools from: [CompetitorResearchTool, AdDatabaseTool, BudgetCheckerTool, MarketTrendTool]
-4. Estimated duration in days (Must sum up logically to approx {target_days} days)
+4. Estimated duration in days (Ensure the critical path sums up EXACTLY to {target_days} days)
 5. Dependencies (task numbers that must be completed first, or empty list)
 6. Deliverables (tangible outputs)
+7. Start Date (YYYY-MM-DD, assume project starts today: {datetime.now().strftime('%Y-%m-%d')})
+8. End Date (YYYY-MM-DD, based on the duration and dependencies)
 
 Format as a JSON array of objects with these exact keys:
 [
@@ -195,31 +201,21 @@ Format as a JSON array of objects with these exact keys:
     "required_tools": [],
     "estimated_days": 1,
     "dependencies": [],
-    "deliverables": []
+    "deliverables": [],
+    "start_date": "YYYY-MM-DD",
+    "end_date": "YYYY-MM-DD"
   }}
 ]
 
-Ensure logical dependencies and sequential flow. The total critical path duration should be around {target_days} days.
+Ensure logical dependencies and sequential flow. The plan MUST be comprehensive and cover all {target_days} days.
 """
             
             response = self.model.generate_content(prompt)
-            response_text = response.text.strip()
-            
-            # Extract JSON from response
-            if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
-            
-            # Parse JSON
-            try:
-                tasks = json.loads(response_text)
-                # Ensure task IDs are sequential
-                for i, task in enumerate(tasks, 1):
-                    task['task_id'] = i
-                return tasks
-            except json.JSONDecodeError:
-                return self._standard_task_decomposition(interpreted_goal)
+            tasks = self._clean_and_parse_json(response.text)
+            # Ensure task IDs are sequential
+            for i, task in enumerate(tasks, 1):
+                task['task_id'] = i
+            return tasks
                 
         except Exception as e:
             print(f"⚠️  Task decomposition error: {e}")

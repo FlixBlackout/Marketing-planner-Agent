@@ -27,12 +27,13 @@ class ExecutionScheduler:
         """
         self.start_date = start_date or datetime.now()
     
-    def generate_schedule(self, tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def generate_schedule(self, tasks: List[Dict[str, Any]], target_duration: int = None) -> Dict[str, Any]:
         """
         Generate a complete execution schedule from task list.
         
         Args:
             tasks: List of task dictionaries with dependencies and durations
+            target_duration: Optional target duration in days to ensure timeline covers it
             
         Returns:
             Complete schedule dictionary with timeline
@@ -44,7 +45,7 @@ class ExecutionScheduler:
         scheduled_tasks = self._calculate_schedule(sorted_tasks)
         
         # Generate day-by-day timeline
-        timeline = self._generate_timeline(scheduled_tasks)
+        timeline = self._generate_timeline(scheduled_tasks, target_duration)
         
         # Identify critical path and milestones
         critical_path = self._identify_critical_path(scheduled_tasks)
@@ -57,7 +58,7 @@ class ExecutionScheduler:
             "milestones": milestones,
             "total_duration_days": len(timeline),
             "start_date": self.start_date.strftime("%Y-%m-%d"),
-            "end_date": (self.start_date + timedelta(days=len(timeline))).strftime("%Y-%m-%d")
+            "end_date": (self.start_date + timedelta(days=len(timeline) - 1)).strftime("%Y-%m-%d")
         }
     
     def _topological_sort(self, tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -134,20 +135,24 @@ class ExecutionScheduler:
         
         return scheduled_tasks
     
-    def _generate_timeline(self, scheduled_tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _generate_timeline(self, scheduled_tasks: List[Dict[str, Any]], target_duration: int = None) -> List[Dict[str, Any]]:
         """
         Generate day-by-day timeline view.
         
         Args:
             scheduled_tasks: Tasks with schedule information
+            target_duration: Optional target duration to extend the timeline to
             
         Returns:
             List of day entries with assigned tasks
         """
-        if not scheduled_tasks:
+        if not scheduled_tasks and not target_duration:
             return []
         
-        total_days = max(task['end_day'] for task in scheduled_tasks)
+        # Determine total days based on tasks and target_duration
+        task_end_days = [task['end_day'] for task in scheduled_tasks] if scheduled_tasks else [0]
+        total_days = max(max(task_end_days), target_duration or 0)
+        
         timeline = []
         
         for day in range(1, total_days + 1):

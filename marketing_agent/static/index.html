@@ -11,6 +11,10 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Gantt Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
@@ -52,6 +56,15 @@
         .gradient-bg {
             background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         }
+        /* Gantt Chart Customizations */
+        .gantt .bar-label {
+            font-weight: 600;
+            font-size: 12px;
+            fill: #fff;
+        }
+        .gantt .bar-progress {
+            fill: #a78bfa;
+        }
     </style>
 </head>
 <body>
@@ -64,7 +77,7 @@
     </div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         // --- Stable UI Components ---
         
@@ -159,6 +172,66 @@
                     })}
                 </div>
             );
+        };
+
+        const GanttChart = ({ tasks }) => {
+            const ganttRef = useRef(null);
+            const [gantt, setGantt] = useState(null);
+
+            useEffect(() => {
+                // Ensure tasks have the required date properties
+                if (!tasks || tasks.length === 0 || !tasks.every(t => t.start_date && t.end_date)) {
+                    if(gantt) gantt.clear();
+                    return;
+                };
+
+                const ganttTasks = tasks.map(task => ({
+                    id: String(task.task_id),
+                    name: task.task_name,
+                    start: task.start_date,
+                    end: task.end_date,
+                    progress: task.progress || 0,
+                    dependencies: task.dependencies ? task.dependencies.map(String).join(',') : ''
+                }));
+
+                if (ganttRef.current) {
+                    if(gantt) gantt.refresh(ganttTasks);
+                    else {
+                        const newGantt = new Gantt(ganttRef.current, ganttTasks, {
+                            header_height: 50,
+                            column_width: 30,
+                            step: 24,
+                            view_modes: ['Day', 'Week', 'Month'],
+                            bar_height: 20,
+                            bar_corner_radius: 4,
+                            arrow_curve: 5,
+                            padding: 18,
+                            view_mode: 'Week',
+                            date_format: 'YYYY-MM-DD',
+                            language: 'en',
+                            custom_popup_html: (task) => {
+                              return `
+                                <div class="p-4 bg-white rounded-lg shadow-lg">
+                                  <h5 class="text-sm font-bold text-slate-700 mb-2">${task.name}</h5>
+                                  <p class="text-xs text-slate-500">${task.start} - ${task.end}</p>
+                                </div>
+                              `;
+                            }
+                        });
+                        setGantt(newGantt);
+                    }
+                }
+            }, [tasks]);
+
+            if (!tasks || tasks.length === 0 || !tasks.every(t => t.start_date && t.end_date)) {
+                return (
+                    <div className="text-center py-10">
+                        <p className="text-sm text-slate-400 font-medium">Gantt chart requires tasks with start and end dates.</p>
+                    </div>
+                );
+            }
+
+            return <div ref={ganttRef} className="py-4"></div>;
         };
 
         const App = () => {
@@ -364,6 +437,11 @@
                                         </div>
                                     </div>
                                     
+                                    {/* Gantt Chart */}
+                                    <Card title="Gantt Timeline" emoji="📊">
+                                        <GanttChart tasks={result.tasks} />
+                                    </Card>
+
                                     {/* Execution Roadmap */}
                                     <Card title="Execution Roadmap" emoji="🚀">
                                         <div className="space-y-4">

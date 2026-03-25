@@ -135,8 +135,8 @@ async def generate_plan(request: PlanningRequest):
         # 3. Schedule
         print("Generating execution schedule...")
         scheduler = ExecutionScheduler()
-        # Pass target duration to scheduler if supported
-        schedule = scheduler.generate_schedule(tasks)
+        # Pass target duration to scheduler to ensure the timeline respects it
+        schedule = scheduler.generate_schedule(tasks, target_duration=request.duration_days)
         
         print("Plan generation successful!")
         return {
