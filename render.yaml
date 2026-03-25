@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: marketing-planner-agent
+    runtime: python
+    buildCommand: pip install -r marketing_agent/requirements.txt
+    startCommand: uvicorn marketing_agent.api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false # User will provide this in the dashboard
+      - key: OPENROUTER_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: OPENROUTER_MODEL
+        value: google/gemini-2.0-flash-001
+      - key: MAX_TOKENS
+        value: "2500"
+      - key: TEMPERATURE
+        value: "0.7"
+      - key: GEMINI_API_KEY
+        sync: false # Optional: User will provide this in the dashboard
