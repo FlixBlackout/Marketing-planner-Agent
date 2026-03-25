@@ -23,7 +23,8 @@ The system is built on a modern, decoupled architecture:
 - **Frontend**: A high-performance React SPA served via FastAPI, using Tailwind CSS for professional styling.
 - **Backend API**: A FastAPI REST server that orchestrates the planning logic and handles multi-agent communication.
 - **Planning Engines**: 
-  - **Gemini Planner**: Leverages Google's Gemini Flash 2.0 for advanced reasoning and strategic planning.
+  - **OpenRouter Planner (Primary)**: Uses OpenRouter (OpenAI-compatible) to access a wide range of models (Gemini, GPT-4, Claude).
+  - **Gemini Planner (Secondary)**: Direct integration with Google's Gemini Flash 2.0.
   - **Simple Planner**: A robust rule-based fallback system.
 - **Scheduling Engine**: A custom dependency-aware scheduler that calculates critical paths and milestones.
 

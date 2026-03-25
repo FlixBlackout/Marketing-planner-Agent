@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 import os
 
 # Import our project components
+from openrouter_planner import OpenRouterPlanner
 from gemini_planner import GeminiMarketingPlanner
 from planner_agent import SimplePlanner
 from scheduler import ExecutionScheduler
@@ -80,39 +81,54 @@ async def generate_plan(request: PlanningRequest):
     
     # 1. Initialize Planner
     planner = None
-    is_gemini = False
+    planner_type = "None"
+    
     if request.use_ai:
+        # Check for OpenRouter (Priority)
         try:
-            planner = GeminiMarketingPlanner()
+            planner = OpenRouterPlanner()
             if planner.api_key:
-                is_gemini = True
-                print("Using Gemini AI Planner")
+                planner_type = "OpenRouter"
+                print("Using OpenRouter AI Planner")
             else:
-                print("⚠️ No GEMINI_API_KEY, falling back to SimplePlanner")
-                planner = SimplePlanner()
+                planner = None
         except Exception as e:
-            print(f"⚠️ Error initializing AI planner: {e}")
-            planner = SimplePlanner()
-    else:
-        print("Using Simple Planner")
+            print(f"⚠️ Error initializing OpenRouter planner: {e}")
+            planner = None
+
+        # Check for Gemini (Secondary)
+        if not planner:
+            try:
+                planner = GeminiMarketingPlanner()
+                if planner.api_key:
+                    planner_type = "Gemini"
+                    print("Using Gemini AI Planner")
+                else:
+                    planner = None
+            except Exception as e:
+                print(f"⚠️ Error initializing Gemini planner: {e}")
+                planner = None
+
+    # Fallback to SimplePlanner
+    if not planner:
+        planner_type = "Simple"
+        print("⚠️ Falling back to SimplePlanner")
         planner = SimplePlanner()
 
     # 2. Interpret and Decompose
     try:
-        if is_gemini:
-            print("Interpreting goal with Gemini...")
+        if planner_type in ["OpenRouter", "Gemini"]:
+            print(f"Interpreting goal with {planner_type}...")
             interpretation = planner.interpret_goal_with_ai(
                 request.goal, 
                 duration_days=request.duration_days,
                 custom_instructions=request.custom_instructions
             )
-            print("Decomposing tasks with Gemini...")
+            print(f"Decomposing tasks with {planner_type}...")
             tasks = planner.decompose_tasks_with_ai(interpretation)
         else:
             print("Interpreting goal with SimplePlanner...")
             interpretation = planner.interpret_goal(request.goal)
-            # Simple planner doesn't yet handle custom duration well, 
-            # but we can pass it if we update it.
             print("Decomposing tasks with SimplePlanner...")
             tasks = planner.decompose_tasks(interpretation)
         

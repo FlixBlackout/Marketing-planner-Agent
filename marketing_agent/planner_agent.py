@@ -52,7 +52,7 @@ class PlannerAgent:
         
     def _initialize_llm(self, model: str) -> ChatOpenAI:
         """
-        Initialize the Language Model.
+        Initialize the Language Model. Supports OpenAI and OpenRouter.
         
         Args:
             model: Model name to use
@@ -60,12 +60,28 @@ class PlannerAgent:
         Returns:
             ChatOpenAI instance
         """
-        # Check for API key
-        if not os.getenv("OPENAI_API_KEY"):
-            print("Warning: OPENAI_API_KEY not set. Using mock mode.")
-            return None
+        # Check for OpenRouter (Priority)
+        openrouter_key = os.getenv("OPENROUTER_API_KEY")
+        openrouter_base = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+        openrouter_model = os.getenv("OPENROUTER_MODEL")
         
-        return ChatOpenAI(model=model, temperature=0.7)
+        if openrouter_key:
+            print(f"Initializing OpenRouter LLM with model: {openrouter_model or model}")
+            return ChatOpenAI(
+                model=openrouter_model or model,
+                api_key=openrouter_key,
+                base_url=openrouter_base,
+                temperature=0.7
+            )
+            
+        # Check for standard OpenAI
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if openai_key:
+            print(f"Initializing OpenAI LLM with model: {model}")
+            return ChatOpenAI(model=model, api_key=openai_key, temperature=0.7)
+            
+        print("Warning: No AI API keys found. LLM functionality will be limited.")
+        return None
     
     def _create_goal_interpreter(self) -> Agent:
         """
