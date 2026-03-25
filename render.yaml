@@ -3,7 +3,7 @@ services:
     name: marketing-planner-agent
     runtime: python
     buildCommand: pip install -r marketing_agent/requirements.txt
-    startCommand: uvicorn marketing_agent.api:app --host 0.0.0.0 --port $PORT
+    startCommand: cd marketing_agent && uvicorn api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: "3.10.12"
