@@ -59,7 +59,16 @@ async def health_check():
 @app.post("/plan")
 async def generate_plan(request: PlanningRequest):
     """
-    Execute the complete planning process for a marketing goal.
+    Generate a comprehensive marketing plan based on a goal, duration, and constraints.
+    
+    Args:
+        request (PlanningRequest): Contains the marketing goal, target duration, and custom instructions.
+        
+    Returns:
+        dict: A structured marketing plan including interpretation, tasks, and execution schedule.
+        
+    Raises:
+        HTTPException: If planning fails due to AI errors or invalid data.
     """
     if not request.goal:
         raise HTTPException(status_code=400, detail="Marketing goal is required")
