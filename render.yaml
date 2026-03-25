@@ -5,6 +5,8 @@ services:
     buildCommand: pip install -r marketing_agent/requirements.txt
     startCommand: uvicorn marketing_agent.api:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.10.12"
       - key: OPENROUTER_API_KEY
         sync: false # User will provide this in the dashboard
       - key: OPENROUTER_BASE_URL
