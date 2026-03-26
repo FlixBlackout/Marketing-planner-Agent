@@ -125,14 +125,19 @@ async def generate_plan(request: PlanningRequest):
     # 2. Interpret and Decompose
     try:
         if planner_type in ["OpenRouter", "Gemini"]:
-            print(f"Interpreting goal with {planner_type}...")
-            interpretation = planner.interpret_goal_with_ai(
+            print(f"Generating full plan with {planner_type}...")
+            # Use the combined method to save tokens
+            full_plan = planner.generate_full_plan_with_ai(
                 request.goal, 
                 duration_days=request.duration_days,
                 custom_instructions=request.custom_instructions
             )
-            print(f"Decomposing tasks with {planner_type}...")
-            tasks = planner.decompose_tasks_with_ai(interpretation)
+            interpretation = full_plan.get("interpretation", {})
+            tasks = full_plan.get("tasks", [])
+            
+            # Add original goal if missing
+            if "original_goal" not in interpretation:
+                interpretation["original_goal"] = request.goal
         else:
             print("Interpreting goal with SimplePlanner...")
             interpretation = planner.interpret_goal(request.goal)

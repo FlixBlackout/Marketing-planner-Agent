@@ -57,6 +57,53 @@ class OpenRouterPlanner:
             except:
                 raise e
 
+    def generate_full_plan_with_ai(self, marketing_goal: str, duration_days: int = 14, custom_instructions: str = "") -> Dict[str, Any]:
+        """Combined call to interpret goal and decompose tasks in a single request to save tokens."""
+        if not self.llm:
+            return {"error": "LLM not initialized"}
+
+        prompt = f"""
+Create a complete marketing plan in JSON format.
+Goal: {marketing_goal}
+Duration: {duration_days} days
+Instructions: {custom_instructions if custom_instructions else "None"}
+
+Requirements:
+- Plan MUST span exactly {duration_days} days.
+- Include 7-12 sequential tasks.
+- Sum of critical path MUST be {duration_days} days.
+- Tasks start today: {datetime.now().strftime('%Y-%m-%d')}
+
+Return JSON with these exact keys:
+{{
+  "interpretation": {{
+    "primary_objective": "...",
+    "focus_areas": [],
+    "target_audience": "...",
+    "success_metrics": [],
+    "challenges": [],
+    "recommended_approach": "...",
+    "complexity": "Low/Medium/High",
+    "target_duration_days": {duration_days}
+  }},
+  "tasks": [
+    {{
+      "task_id": 1,
+      "task_name": "...",
+      "description": "...",
+      "required_tools": ["CompetitorResearchTool", "AdDatabaseTool", "BudgetCheckerTool", "MarketTrendTool"],
+      "estimated_days": 1,
+      "dependencies": [],
+      "deliverables": [],
+      "start_date": "YYYY-MM-DD",
+      "end_date": "YYYY-MM-DD"
+    }}
+  ]
+}}
+"""
+        response = self.llm.invoke([HumanMessage(content=prompt)])
+        return self._clean_and_parse_json(response.content)
+
     def interpret_goal_with_ai(self, marketing_goal: str, duration_days: int = 14, custom_instructions: str = "") -> Dict[str, Any]:
         if not self.llm:
             return {"error": "LLM not initialized"}
