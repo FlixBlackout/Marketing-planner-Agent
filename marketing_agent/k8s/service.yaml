@@ -1,0 +1,207 @@
+# =============================================================================
+# Kubernetes Service and Ingress
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: marketing-agent-service
+  namespace: marketing-agent
+  labels:
+    app: marketing-agent
+    component: api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+spec:
+  type: ClusterIP
+  selector:
+    app: marketing-agent
+    component: api
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+
+---
+# =============================================================================
+# Ingress Controller
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: marketing-agent-ingress
+  namespace: marketing-agent
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "10"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+spec:
+  tls:
+  - hosts:
+    - marketing-agent.example.com
+    secretName: marketing-agent-tls
+  rules:
+  - host: marketing-agent.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: marketing-agent-service
+            port:
+              number: 80
+
+---
+# =============================================================================
+# Redis Deployment
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: marketing-agent
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: redis
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
+        - --maxmemory
+        - 256mb
+        - --maxmemory-policy
+        - allkeys-lru
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-pvc
+
+---
+# =============================================================================
+# Redis Service
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: marketing-agent
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+    protocol: TCP
+
+---
+# =============================================================================
+# Persistent Volume Claim for Redis
+# =============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: marketing-agent
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+
+---
+# =============================================================================
+# Namespace
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: marketing-agent
+  labels:
+    name: marketing-agent
+    environment: production
+
+---
+# =============================================================================
+# Service Account
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: marketing-agent-sa
+  namespace: marketing-agent
+  labels:
+    app: marketing-agent
+
+---
+# =============================================================================
+# Secrets (Template - Replace with actual values)
+# =============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: marketing-agent-secrets
+  namespace: marketing-agent
+  labels:
+    app: marketing-agent
+type: Opaque
+data:
+  # Base64 encoded values - replace with your actual secrets
+  openrouter-api-key: c2stb3ItdjEtWU9VUi1LRVktSEVSRS1SRVBMQUNFLVRISVM=
