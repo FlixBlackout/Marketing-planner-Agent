@@ -1,6 +1,32 @@
-# 🎯 Marketing Agent: Setup & Development
+# 🎯 Marketing Planning Assistant
 
-This folder contains the core logic for the Marketing Planning Assistant. It includes the backend API, AI-powered planning engines, and the professional React-based web dashboard.
+AI-powered marketing planning agent that creates actionable, day-by-day marketing strategies using Google Gemini and multi-agent systems.
+
+## 🚀 Quick Start
+
+### Local Development
+```bash
+cd marketing_agent
+python api.py
+```
+Access at: http://localhost:8000
+
+### Docker
+```bash
+docker-compose up
+```
+
+### Kubernetes
+```bash
+cd k8s
+.\setup-k8s.bat
+```
+
+### AWS (Free Tier)
+```bash
+cd aws
+.\deploy-aws-quick.ps1
+```
 
 ## 📁 Folder Structure
 
@@ -10,6 +36,26 @@ This folder contains the core logic for the Marketing Planning Assistant. It inc
 - `scheduler.py`: A dependency-aware task scheduling engine.
 - `tools.py`: Mock marketing tools for resource validation and competitor analysis.
 - `static/`: Contains the React-based frontend (`index.html`).
+- `k8s/`: Kubernetes deployment manifests
+- `aws/`: AWS deployment scripts and templates
+- `Dockerfile`: Multi-stage Docker build configuration
+
+## 🌐 Deployment Options
+
+| Platform | Free Tier | Setup Time | Complexity |
+|----------|-----------|------------|------------|
+| **Local** | ✅ Always | 5 min | Easy |
+| **Docker** | ✅ Always | 10 min | Easy |
+| **Kubernetes** | ✅ Always | 15 min | Medium |
+| **AWS App Runner** | ✅ 100 GB-hrs/mo | 20 min | Easy |
+| **Render** | ✅ 750 hrs/mo | 10 min | Easy |
+
+**See deployment guides:**
+- [AWS Free Tier Deployment](aws/AWS_DEPLOYMENT.md)
+- [AWS Cost Optimization](aws/AWS_FREE_TIER_COST_GUIDE.md)
+- [Docker Guide](DOCKER_GUIDE.md)
+- [Kubernetes Setup](KUBERNETES_SETUP.md)
+- [Kubernetes Quick Ref](k8s/KUBERNETES_QUICK_REF.md)
 
 ## 🛠️ Detailed Setup
 

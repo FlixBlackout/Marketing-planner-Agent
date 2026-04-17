@@ -1,0 +1,110 @@
+# =============================================================================
+# AWS CloudFormation Template - Marketing Planning Assistant
+# Free Tier Optimized Deployment
+# =============================================================================
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Marketing Planning Assistant - AWS Free Tier Deployment'
+
+Parameters:
+  OpenRouterApiKey:
+    Type: String
+    NoEcho: true
+    Description: Your OpenRouter API key
+    MinLength: 1
+  
+  RedisUrl:
+    Type: String
+    Default: ''
+    Description: Redis URL (leave empty to disable Redis)
+    MinLength: 0
+
+Resources:
+  # ECR Repository
+  MarketingAgentRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: marketing-agent
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only last 5 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 5
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+
+  # App Runner Service
+  MarketingAgentService:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: marketing-agent
+      SourceConfiguration:
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt AppRunnerECRAccessRole.Arn
+        ImageRepository:
+          ImageRepositoryType: ECR
+          ImageIdentifier: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/marketing-agent:latest'
+          ImageConfiguration:
+            Port: 8000
+            RuntimeEnvironmentVariables:
+              - Name: PORT
+                Value: '8000'
+              - Name: OPENROUTER_API_KEY
+                Value: !Ref OpenRouterApiKey
+              - Name: REDIS_URL
+                Value: !If [HasRedis, !Ref RedisUrl, 'redis://localhost:6379/0']
+              - Name: APP_ENV
+                Value: production
+              - Name: LOG_LEVEL
+                Value: info
+      InstanceConfiguration:
+        Cpu: '1 vCPU'
+        Memory: '2 GB'
+  
+  # IAM Role for App Runner to access ECR
+  AppRunnerECRAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: build.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::policy/AWSAppRunnerServicePolicyForECRAccess
+
+  # CloudWatch Log Group
+  MarketingAgentLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/apprunner/marketing-agent
+      RetentionInDays: 7
+
+Outputs:
+  ServiceUrl:
+    Description: URL of the App Runner service
+    Value: !GetAtt MarketingAgentService.ServiceUrl
+  
+  ServiceArn:
+    Description: ARN of the App Runner service
+    Value: !GetAtt MarketingAgentService.ServiceArn
+  
+  EcrRepository:
+    Description: ECR repository URI
+    Value: !GetAtt MarketingAgentRepository.RepositoryUri
+
+Conditions:
+  HasRedis: !Not [!Equals [!Ref RedisUrl, '']]
